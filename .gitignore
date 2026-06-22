@@ -1,0 +1,4 @@
+./prieto-buffers/target
+./prieto-buffers/Cargo.lock
+./prieto-buffers/prieto-buffers-derive/target
+./prieto-buffers/prieto-buffers-derive/Cargo.lock
