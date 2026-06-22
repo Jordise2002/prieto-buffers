@@ -29,7 +29,6 @@ use std::collections::HashSet;
 fn generate_non_defined_ids(v: Vec<Option<u8>>) -> Option<Vec<u8>> {
     let mut used = HashSet::new();
 
-    // recoger los usados
     for x in v.iter().flatten() {
         used.insert(*x);
     }
