@@ -1,0 +1,13 @@
+[package]
+name = "prieto-buffers-derive"
+version = "0.1.0"
+edition = "2024"
+
+[lib]
+proc-macro = true
+
+[dependencies]
+syn = "2"
+quote = "1"
+proc-macro2 = "1"
+byteorder = "1.4"

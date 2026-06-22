@@ -1,0 +1,11 @@
+[package]
+name = "prieto-buffers"
+version = "0.1.0"
+edition = "2024"
+
+[features]
+default = ["derive"]
+derive = ["dep:prieto-buffers-derive"]
+
+[dependencies]
+prieto-buffers-derive = { path = "../prieto-buffers-derive", optional = true }
