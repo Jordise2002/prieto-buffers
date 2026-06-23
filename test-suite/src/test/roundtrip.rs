@@ -15,6 +15,8 @@ fn test_base_types_roundtrip() {
         g: u64,
         h: i64,
         i: bool,
+        j: f32,
+        k: f64
     }
 
     let a = RoundtripTestStruct {
@@ -27,6 +29,8 @@ fn test_base_types_roundtrip() {
         g: 7,
         h: -8,
         i: true,
+        j: 66.,
+        k: 33.
     };
 
     //Init with default values
@@ -40,6 +44,8 @@ fn test_base_types_roundtrip() {
         g: 0,
         h: 0,
         i: false,
+        j: 0.,
+        k: 0.
     };
 
     let mut output = Vec::new();

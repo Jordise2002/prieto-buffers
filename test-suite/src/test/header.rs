@@ -85,16 +85,38 @@ fn test_header_datatype() {
         prieto_buffers::FieldType::EightBytes,
         extract_datatype_from_header(h_buffer[0]).expect("Invalid data type header")
     );
+
+    let j: f32 = 33.;
+
+    let mut j_buffer = [0; 5];
+
+    j.serialize_with_header(8, j_buffer.as_mut_slice());
+
+    assert_eq!(
+        prieto_buffers::FieldType::FourBytes,
+        extract_datatype_from_header(j_buffer[0]).expect("Invalid data type header")
+    );
+
+    let k: f64 = 66.;
+
+    let mut k_buffer = [0; 9];
+
+    k.serialize_with_header(9, k_buffer.as_mut_slice());
+
+    assert_eq!(
+        prieto_buffers::FieldType::EightBytes,
+        extract_datatype_from_header(k_buffer[0]).expect("invalid data type header")
+    );
 }
 
 #[test]
 fn test_header_field_id() {
     use prieto_buffers::PrietoBuffersSerde;
-    
+
     fn extract_field_id_from_header(header: u8) -> u8 {
         header & 0b00011111
     }
-    
+
     let a: u8 = 1;
 
     let mut a_buffer = [0; 2];

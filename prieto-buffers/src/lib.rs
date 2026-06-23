@@ -247,3 +247,45 @@ impl PrietoBuffersSerde for i64 {
         }
     }
 }
+
+impl PrietoBuffersSerde for f32 {
+    fn get_size(&self) -> u32 {
+        4
+    }
+
+    fn get_type(&self) -> FieldType {
+        FieldType::FourBytes
+    }
+
+    fn serialize(&self, bytes: &mut [u8]) {
+        let integer: u32 = self.to_bits();
+        integer.serialize(bytes);
+    }
+
+    fn deserialize(&mut self, bytes: &[u8]) {
+        let mut integer: u32 = 0;
+        integer.deserialize(bytes);
+        *self = f32::from_bits(integer);
+    }
+}
+
+impl PrietoBuffersSerde for f64 {
+    fn get_size(&self) -> u32 {
+        8
+    }
+
+    fn get_type(&self) -> FieldType {
+        FieldType::EightBytes
+    }
+
+    fn serialize(&self, bytes: &mut [u8]) {
+        let integer: u64 = self.to_bits();
+        integer.serialize(bytes);
+    }
+
+    fn deserialize(&mut self, bytes: &[u8]) {
+        let mut integer: u64 = 0;
+        integer.deserialize(bytes);
+        *self = f64::from_bits(integer);
+    }
+}
