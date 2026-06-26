@@ -15,7 +15,7 @@ fn test_base_types_roundtrip() {
         g: u64,
         h: i64,
         i: bool,
-        j: f32,
+        j: Option<f32>,
         k: f64
     }
 
@@ -29,7 +29,7 @@ fn test_base_types_roundtrip() {
         g: 7,
         h: -8,
         i: true,
-        j: 66.,
+        j: Some(0.),
         k: 33.
     };
 
@@ -44,7 +44,7 @@ fn test_base_types_roundtrip() {
         g: 0,
         h: 0,
         i: false,
-        j: 0.,
+        j: None,
         k: 0.
     };
 
@@ -127,6 +127,65 @@ fn test_empty_struct() {
     output.resize(size as usize, 0);
     
     a.serialize(output.as_mut_slice());
+    b.deserialize(output.as_slice());
+
+    assert_eq!(a, b);
+}
+
+#[test]
+fn test_optional_roundtrip() {
+    use prieto_buffers::PrietoBuffersSerde;
+
+    #[derive(PrietoBuffersSerde, PartialEq, Debug)]
+    struct OptionalTestStruct {
+        a: Option<u8>,
+        b: Option<i8>,
+        c: Option<u16>,
+        d: Option<i16>,
+        e: Option<u32>,
+        f: Option<i32>,
+        g: Option<u64>,
+        h: Option<i64>,
+        i: Option<bool>,
+        j: Option<f32>,
+        k: Option<f64>
+    }
+
+    let a = OptionalTestStruct {
+        a: Some(1),
+        b: Some(-2),
+        c: None,
+        d: Some(-4),
+        e: Some(5),
+        f: Some(-6),
+        g: None,
+        h: Some(-8),
+        i: Some(true),
+        j: Some(66.),
+        k: None
+    };
+
+    let mut b = OptionalTestStruct {
+        a: None,
+        b: None,
+        c: None,
+        d: None,
+        e: None,
+        f: None,
+        g: None,
+        h: None,
+        i: None,
+        j: None,
+        k: None
+    };
+
+    let size = a.get_size();
+
+    let mut output = Vec::new();
+    output.resize(size as usize, 0);
+
+    a.serialize(output.as_mut_slice());
+
     b.deserialize(output.as_slice());
 
     assert_eq!(a, b);

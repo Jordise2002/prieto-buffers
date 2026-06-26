@@ -79,8 +79,6 @@ pub fn derive_prieto_buffer_serde(input: TokenStream) -> TokenStream {
         field.ident.as_ref().expect("Fields must be named")
     }).collect();
 
-    let field_ammount = field_names.len();
-
     let defined_field_ids = fields.iter().map(|field| {
         for attr in &field.attrs {
             if attr.path().is_ident("field_id") {
@@ -120,7 +118,9 @@ pub fn derive_prieto_buffer_serde(input: TokenStream) -> TokenStream {
         impl PrietoBuffersSerde for #struct_name {
             fn get_size(&self) -> u32 {
                 let mut size = 1;
-                #(size += self.#field_names.get_size() + 1;)*
+                #(if self.#field_names.should_serialize() {
+                    size += self.#field_names.get_size() + 1;
+                })*
                 size
             }
 
@@ -130,13 +130,19 @@ pub fn derive_prieto_buffer_serde(input: TokenStream) -> TokenStream {
 
             fn serialize(&self, bytes: &mut [u8]) {
                 let mut offset:u32 = 0;
+                let mut field_amount:u8 = 0;
     
-                bytes[offset as usize] = #field_ammount as u8;
+                #(if self.#field_names.should_serialize() {
+                    field_amount += 1;
+                })*
+                bytes[offset as usize] = field_amount;
                 offset += 1;
 
                 #(
-                    self.#field_names.serialize_with_header(#field_ids, &mut bytes[offset as usize..]);
-                    offset += self.#field_names.get_size() + 1;
+                    if self.#field_names.should_serialize() {
+                        self.#field_names.serialize_with_header(#field_ids, &mut bytes[offset as usize..]);
+                        offset += self.#field_names.get_size() + 1;
+                    }
                 )*
             }
 
