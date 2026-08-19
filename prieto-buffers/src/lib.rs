@@ -7,7 +7,8 @@ pub enum FieldType {
     TwoBytes = 1,
     FourBytes = 2,
     EightBytes = 3,
-    Struct = 4
+    Struct = 4,
+    None = 5,//Represents an empty field, used for Option<T> when T is None should not be serialized
 }
 
 impl FieldType {
@@ -17,7 +18,8 @@ impl FieldType {
             FieldType::TwoBytes => 2,
             FieldType::FourBytes => 4,
             FieldType::EightBytes => 8,
-            FieldType::Struct => 0// Struct sizes are dynamic and determined by their fields
+            FieldType::Struct => 0,// Struct sizes are dynamic and determined by their fields
+            FieldType::None => 0
         }
     }
 
@@ -51,6 +53,10 @@ pub trait PrietoBuffersSerde {
     fn get_size(&self) -> u32;
     fn get_type(&self) -> FieldType;
     fn serialize(&self, bytes: &mut [u8]);
+
+    fn should_serialize(&self) -> bool {
+        true
+    }
     
     fn serialize_with_header(&self, field_id: u8, bytes: &mut [u8])
     {
@@ -245,5 +251,76 @@ impl PrietoBuffersSerde for i64 {
         for i in 0..8 {
             *self |= (bytes[i] as i64) << (i * 8);
         }
+    }
+}
+
+impl PrietoBuffersSerde for f32 {
+    fn get_size(&self) -> u32 {
+        4
+    }
+
+    fn get_type(&self) -> FieldType {
+        FieldType::FourBytes
+    }
+
+    fn serialize(&self, bytes: &mut [u8]) {
+        let integer: u32 = self.to_bits();
+        integer.serialize(bytes);
+    }
+
+    fn deserialize(&mut self, bytes: &[u8]) {
+        let mut integer: u32 = 0;
+        integer.deserialize(bytes);
+        *self = f32::from_bits(integer);
+    }
+}
+
+impl PrietoBuffersSerde for f64 {
+    fn get_size(&self) -> u32 {
+        8
+    }
+
+    fn get_type(&self) -> FieldType {
+        FieldType::EightBytes
+    }
+
+    fn serialize(&self, bytes: &mut [u8]) {
+        let integer: u64 = self.to_bits();
+        integer.serialize(bytes);
+    }
+
+    fn deserialize(&mut self, bytes: &[u8]) {
+        let mut integer: u64 = 0;
+        integer.deserialize(bytes);
+        *self = f64::from_bits(integer);
+    }
+}
+
+impl<T: PrietoBuffersSerde + Default> PrietoBuffersSerde for Option<T> {
+    fn get_size(&self) -> u32 {
+        match self {
+            Some(value) => value.get_size(),
+            None => 0,
+        }
+    }
+
+    fn get_type(&self) -> FieldType {
+        T::default().get_type()
+    }
+
+    fn serialize(&self, bytes: &mut [u8]) {
+        if let Some(value) = self {
+            value.serialize(bytes);
+        }
+    }
+
+    fn should_serialize(&self) -> bool {
+        self.is_some()
+    }
+
+    fn deserialize(&mut self, bytes: &[u8]) {
+        let mut value = T::default();
+        value.deserialize(bytes);
+        *self = Some(value);
     }
 }

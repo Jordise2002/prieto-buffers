@@ -1,0 +1,8 @@
+[package]
+name = "prieto-buffers-test-suite"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+prieto-buffers = { path = "../prieto-buffers" }
+prieto-buffers-derive = { path = "../prieto-buffers-derive" }
