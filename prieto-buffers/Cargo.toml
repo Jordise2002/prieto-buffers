@@ -4,8 +4,9 @@ version = "0.1.0"
 edition = "2024"
 
 [features]
-default = ["derive"]
+default = ["derive", "std"]
 derive = ["dep:prieto-buffers-derive"]
+std = []
 
 [dependencies]
 prieto-buffers-derive = { path = "../prieto-buffers-derive", optional = true }
