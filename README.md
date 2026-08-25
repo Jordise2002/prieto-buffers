@@ -2,12 +2,15 @@
 
 **Prieto-buffers** is a minimal serialization protocol designed for embedded systems. It is built with `no_std` support and focuses on simplicity, deterministic layout, and low binary overhead.
 
+At the moment, the crate supports only fixed-size types and does not include support for dynamically sized data (such as `String` or `Vec<T>`).
+
 ---
 
 ## Features
 
 - `no_std` compatible
 - Minimal binary format
+- Fixed-size type serialization
 - Struct-based derivation via `#[derive(PrietoBuffersSerde)]`
 - Optional field identifiers for flexible schemas
 
@@ -73,7 +76,7 @@ This allows:
 
 ## Limitations
 
-- No support for dynamically sized types (`String`, `Vec<T>`, etc.) within a no-std context
+- No support for dynamically sized types (`String`, `Vec<T>`, etc.)
 - Field ID range limited to 0–32
 ---
 
