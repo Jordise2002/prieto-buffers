@@ -1,7 +1,9 @@
 use proc_macro::TokenStream;
 use quote::quote;
-
 use syn::{Meta, Lit};
+use std::collections::HashSet;
+
+const MAX_FIELD_ID: u8 = 31;
 
 fn parse_u8_from_attr(attr: &syn::Attribute) -> Option<u8> {
     match &attr.meta {
@@ -10,8 +12,8 @@ fn parse_u8_from_attr(attr: &syn::Attribute) -> Option<u8> {
                 let lit: Lit = syn::parse2(meta_list.tokens.clone()).ok()?;
                 if let Lit::Int(lit_int) = lit {
                     if let Ok(value) = lit_int.base10_parse::<u8>() {
-                        if value > 31 {
-                            panic!("Field ID must be between 0 and 31");
+                        if value > MAX_FIELD_ID {
+                            panic!("Field ID must be between 0 and {}", MAX_FIELD_ID);
                         }
 
                         return Some(value);
@@ -24,7 +26,7 @@ fn parse_u8_from_attr(attr: &syn::Attribute) -> Option<u8> {
     }
 }
 
-use std::collections::HashSet;
+
 
 fn generate_non_defined_ids(v: Vec<Option<u8>>) -> Option<Vec<u8>> {
     let mut used = HashSet::new();
@@ -43,8 +45,8 @@ fn generate_non_defined_ids(v: Vec<Option<u8>>) -> Option<Vec<u8>> {
                 result.push(x);
             }
             None => {
-                while next_id <= 31 && used.contains(&next_id) {
-                    if next_id == 31 {
+                while next_id <= MAX_FIELD_ID && used.contains(&next_id) {
+                    if next_id == MAX_FIELD_ID {
                         return None;
                     }
                     next_id += 1;
