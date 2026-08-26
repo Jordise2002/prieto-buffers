@@ -96,22 +96,39 @@ pub fn derive_prieto_buffer_serde(input: TokenStream) -> TokenStream {
     quote! {
         impl #struct_name {
             pub fn skip_field(bytes: &[u8], field_type: prieto_buffers::FieldType) -> u32 {
-                if let prieto_buffers::FieldType::Struct = field_type {
-                    let field_count = bytes[0] as u32;
-                    let mut offset = 1;
+                match field_type {
+                    prieto_buffers::FieldType::Struct => {
+                        let field_count = bytes[0] as u32;
+                        let mut offset:u32 = 1;
 
-                    for _ in 0..field_count {
-                        let field_header = bytes[offset as usize];
-                        offset += 1;
+                        for _ in 0..field_count {
+                            let field_header = bytes[offset as usize];
+                            offset += 1;
 
-                        let field_type = prieto_buffers::FieldType::from_u8(field_header >> 5).unwrap();
-                        offset += #struct_name::skip_field(&bytes[offset as usize..], field_type);
+                            let field_type = prieto_buffers::FieldType::from_u8(field_header >> 5).unwrap();
+                            offset += #struct_name::skip_field(&bytes[offset as usize..], field_type);
+                        }
+
+                        offset
                     }
+                    prieto_buffers::FieldType::Array => {
+                        let mut size: u32 = 0;
+                        size.deserialize(&bytes);
 
-                    offset as u32
-                }
-                else {
-                    field_type.get_size() as u32
+                        let mut offset:u32 = size_of::<u32>() as u32;
+
+                        for _ in 0..size {
+                            let field_header = bytes[offset as usize];
+                            offset += 1;
+
+                            let field_type = prieto_buffers::FieldType::from_u8(field_header >> 5).unwrap();
+                            offset += #struct_name::skip_field(&bytes[offset as usize..], field_type);
+                        }
+                        offset
+                    }
+                    _ => {
+                        field_type.get_size() as u32
+                    }
                 }
             }
         }

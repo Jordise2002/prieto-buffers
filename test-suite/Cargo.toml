@@ -4,5 +4,6 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-prieto-buffers = { path = "../prieto-buffers" }
+prieto-buffers = { path = "../prieto-buffers" , features = ["derive", "std"]}
 prieto-buffers-derive = { path = "../prieto-buffers-derive" }
+rand = "0.10.2"
