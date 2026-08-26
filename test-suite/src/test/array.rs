@@ -133,5 +133,27 @@ fn test_vec_struct()
     c.deserialize(output.as_slice());
 
     assert_eq!(a, b);
+    eprint!("A: {:?}\n", a);
+    eprint!("C: {:?}\n", c);
+    eprint!("output: {:?}\n", output);
+    
     assert_eq!(a.c, c.c);
+}
+
+#[test]
+fn test_string() {
+    use prieto_buffers::PrietoBuffersSerde;
+
+    let a: String = "Hello, World!".to_string();
+    let mut b: String = String::new();
+
+
+    let size = a.get_size();
+    let mut output = Vec::new();
+    output.resize(size as usize, 0);
+
+    a.serialize(output.as_mut_slice());
+    b.deserialize(output.as_slice());
+
+    assert_eq!(a, b);
 }
