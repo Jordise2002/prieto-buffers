@@ -1,3 +1,5 @@
+use std::assert_eq;
+
 #[test]
 fn test_zero_ended_string() {
     use prieto_buffers::PrietoBuffersSerde;
@@ -38,6 +40,12 @@ fn test_zero_ended_string_struct() {
         b: [u8; 1024],
     }
 
+    #[derive(PrietoBuffersSerde, Debug, PartialEq)]
+    struct TestStructCompatible {
+        a: u8,
+        b: [u8; 1024]
+    }
+
     let mut a = TestStruct {
         a: [1; 1024],
         b: [1; 1024],
@@ -45,6 +53,11 @@ fn test_zero_ended_string_struct() {
     let mut b = TestStruct {
         a: [1; 1024],
         b: [2; 1024],
+    };
+
+    let mut c = TestStructCompatible {
+        a: 87,
+        b: [3; 1024]
     };
 
     a.a[0] = 'h' as u8;
@@ -59,4 +72,10 @@ fn test_zero_ended_string_struct() {
 
     a.serialize(output.as_mut_slice());
     b.deserialize(output.as_slice());
+
+    assert_eq!(a, b);
+
+    c.deserialize(output.as_slice());
+
+    assert_eq!(a.b, c.b);
 }
