@@ -380,10 +380,10 @@ mod zero_ended_array {
     pub fn get_size_with_options<T: PrietoBuffersSerde + Default, const N: usize>(array: &[T; N], _options: SerializeOptions) -> u32 {
         let mut size: u32 = 4 + 1;//Size for the length prefix and data type byte
         for item in array.iter() {
+            size += item.get_size_with_options(_options); // +1 for the field header
             if item.is_zero_end() {
                 break;
             }
-            size += item.get_size_with_options(_options); // +1 for the field header
         }
 
         size
@@ -392,10 +392,10 @@ mod zero_ended_array {
     pub fn serialize_with_options<T: PrietoBuffersSerde + Default, const N: usize>(array: &[T; N], bytes: &mut [u8], options: SerializeOptions) {
         let mut len:u32 = 0;
         for item in array.iter() {
+            len += 1;
             if item.is_zero_end() {
                 break;
             }
-            len += 1;
         }
 
         len.serialize(bytes);
@@ -406,11 +406,11 @@ mod zero_ended_array {
         offset += size_of::<u8>();
 
         for item in array.iter() {
+            item.serialize_with_options( &mut bytes[offset as usize..], options);
+            offset += item.get_size_with_options(options) as usize;
             if item.is_zero_end() {
                 break;
             }
-            item.serialize_with_options( &mut bytes[offset as usize..], options);
-            offset += item.get_size_with_options(options) as usize;
         }
     }
 }
@@ -484,10 +484,10 @@ mod zero_ended_vec {
     pub fn get_size_with_options<T: super::PrietoBuffersSerde + Default>(vec: &Vec<T>, _options: super::SerializeOptions) -> u32 {
         let mut size: u32 = 0;
         for item in vec.iter() {
+            size += item.get_size_with_options(_options) + 1; // +1 for the field header
             if item.is_zero_end() {
                 break;
             }
-            size += item.get_size_with_options(_options) + 1; // +1 for the field header
         }
 
         size
@@ -496,10 +496,10 @@ mod zero_ended_vec {
     pub fn serialize_with_options<T: super::PrietoBuffersSerde + Default>(vec: &Vec<T>, bytes: &mut [u8], options: super::SerializeOptions) {
         let mut len: u32 = 0;
         for item in vec.iter() {
+            len += 1;
             if item.is_zero_end() {
                 break;
             }
-            len += 1;
         }
 
         len.serialize(bytes);
@@ -511,11 +511,11 @@ mod zero_ended_vec {
         offset += size_of::<u8>();
 
         for item in vec.iter() {
+            item.serialize_with_options(&mut bytes[offset as usize..], options);
+            offset += item.get_size_with_options(options) as usize;
             if item.is_zero_end() {
                 break;
             }
-            item.serialize_with_options(&mut bytes[offset as usize..], options);
-            offset += item.get_size_with_options(options) as usize;
         }
     }
 }
@@ -526,9 +526,9 @@ impl<T: PrietoBuffersSerde + Default> PrietoBuffersSerde for Vec<T> {
             return zero_ended_vec::get_size_with_options(self, options);
         }
 
-        let mut size: u32 = size_of::<u32>() as u32; // Size for the length prefix
+        let mut size: u32 = (size_of::<u32>() + size_of::<u8>()) as u32; // size of the prefix length(4) + type(1)
         for item in self.iter() {
-            size += item.get_size_with_options(options) + 1; // +1 for the field header
+            size += item.get_size_with_options(options);
         }
         size
     }

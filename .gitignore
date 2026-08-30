@@ -4,3 +4,4 @@
 /prieto-buffers-derive/Cargo.lock
 /test-suite/Cargo.lock
 /test-suite/target
+.vscode

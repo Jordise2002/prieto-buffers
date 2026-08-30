@@ -65,7 +65,7 @@ fn generate_non_defined_ids(v: Vec<Option<u8>>) -> Option<Vec<u8>> {
     Some(result)
 }
 
-#[proc_macro_derive(PrietoBuffersSerde, attributes(field_id))]
+#[proc_macro_derive(PrietoBuffersSerde, attributes(field_id, zero_ended))]
 pub fn derive_prieto_buffer_serde(input: TokenStream) -> TokenStream {
     let input = syn::parse_macro_input!(input as syn::DeriveInput);
 
@@ -109,7 +109,6 @@ pub fn derive_prieto_buffer_serde(input: TokenStream) -> TokenStream {
                     prieto_buffers::FieldType::Struct => {
                         let field_count = bytes[0] as u32;
                         let mut offset:u32 = 1;
-                        eprintln!("Skipping struct with {} fields", field_count);
                         for _ in 0..field_count {
                             let field_header = bytes[offset as usize];
                             offset += 1;
@@ -129,7 +128,7 @@ pub fn derive_prieto_buffer_serde(input: TokenStream) -> TokenStream {
                         let field_header = bytes[offset as usize];
                         let field_type = prieto_buffers::FieldType::from_u8(field_header).unwrap();
                         offset += 1;
-                        eprintln!("Skipping array of type {:?} with size {}", field_type, size);
+
                         
                         for _ in 0..size {
                             offset += #struct_name::skip_field(&bytes[offset as usize..], field_type);
@@ -137,7 +136,6 @@ pub fn derive_prieto_buffer_serde(input: TokenStream) -> TokenStream {
                         offset
                     }
                     _ => {
-                        eprintln!("Skipping field of type {:?} with size {}", field_type, field_type.get_size());
                         field_type.get_size() as u32
                     }
                 }
@@ -148,6 +146,10 @@ pub fn derive_prieto_buffer_serde(input: TokenStream) -> TokenStream {
             fn get_size_with_options(&self, options: prieto_buffers::SerializeOptions) -> u32 {
                 let mut size = 1;
                 #(if self.#field_names.should_serialize() {
+                    let mut options = options.clone();
+                    if #is_zero_ended_str {
+                        options.is_zero_ended_string = true;
+                    }
                     size += self.#field_names.get_size_with_options(options) + 1;
                 })*
                 size
@@ -175,7 +177,7 @@ pub fn derive_prieto_buffer_serde(input: TokenStream) -> TokenStream {
                         }
                         if self.#field_names.should_serialize() {
                             self.#field_names.serialize_with_header(#field_ids, &mut bytes[offset as usize..], Some(options));
-                            offset += self.#field_names.get_size() + 1;
+                            offset += self.#field_names.get_size_with_options(options) + 1;
                         }
                     }
                 )*
@@ -199,13 +201,15 @@ pub fn derive_prieto_buffer_serde(input: TokenStream) -> TokenStream {
                         #(
                             #field_ids => {
                                 if self.#field_names.get_type() == field_type {
+                                    let mut options = options.clone();
+                                    if #is_zero_ended_str {
+                                        options.is_zero_ended_string = true;
+                                    }
                                     self.#field_names.deserialize_with_options(&bytes[offset as usize..], options);
-                                    self.#field_names.get_size()
+                                    self.#field_names.get_size_with_options(options)
                                 }
                                 else {
-                                    let field_size = #struct_name::skip_field(&bytes[offset as usize..], field_type);
-                                    eprintln!("skip field {} with type {:?} and size {}", field_id, field_type, field_size);
-                                    field_size
+                                    #struct_name::skip_field(&bytes[offset as usize..], field_type)
                                 }
                             }
                         )*
