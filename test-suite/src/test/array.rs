@@ -133,9 +133,6 @@ fn test_vec_struct()
     c.deserialize(output.as_slice());
 
     assert_eq!(a, b);
-    eprint!("A: {:?}\n", a);
-    eprint!("C: {:?}\n", c);
-    eprint!("output: {:?}\n", output);
     
     assert_eq!(a.c, c.c);
 }
