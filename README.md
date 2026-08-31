@@ -2,7 +2,7 @@
 
 **Prieto-buffers** is a minimal serialization protocol designed for embedded systems. It is built with `no_std` support and focuses on simplicity, deterministic layout, and low binary overhead.
 
-At the moment, the crate supports only fixed-size types and does not include support for dynamically sized data (such as `String` or `Vec<T>`).
+In addition to fixed-size types, the crate supports dynamically sized data such as fixed-size arrays (`[T; N]`), `Vec<T>` and `String`, including zero-terminated ("C string" style) encoding.
 
 ---
 
@@ -11,6 +11,8 @@ At the moment, the crate supports only fixed-size types and does not include sup
 - `no_std` compatible
 - Minimal binary format
 - Fixed-size type serialization
+- Support for `[T; N]`, `Vec<T>` and `String`
+- Optional zero-ended (null-terminated) encoding for byte arrays/vectors/strings via `#[zero_ended]`
 - Struct-based derivation via `#[derive(PrietoBuffersSerde)]`
 - Optional field identifiers for flexible schemas
 
@@ -59,6 +61,21 @@ When a struct is serialized, an additional prefix is written containing:
 
 This helps the deserializer iterate over the serialized data efficiently.
 
+### Arrays, vectors and strings
+
+Fixed-size arrays (`[T; N]`) and dynamically sized `Vec<T>` and `String` are both serialized as an `Array` field, prefixed with the number of elements and their type.
+
+By default, arrays/vectors are serialized in full (all `N` elements for arrays, or the full length for vectors). Marking a byte array/vector/string field with `#[zero_ended]` instead encodes it like a C string: only the bytes up to (and including) the first `0` byte are written, which can save space when the buffer is mostly padding.
+
+```rust
+#[derive(PrietoBuffersSerde)]
+struct TestStruct {
+    #[zero_ended]
+    name: [u8; 64],
+    payload: Vec<u8>,
+}
+```
+
 ---
 
 ## Schema compatibility
@@ -76,7 +93,6 @@ This allows:
 
 ## Limitations
 
-- No support for dynamically sized types (`String`, `Vec<T>`, etc.)
 - Field ID range limited to 0–32
 ---
 
