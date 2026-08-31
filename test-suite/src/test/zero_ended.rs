@@ -79,3 +79,53 @@ fn test_zero_ended_string_struct() {
 
     assert_eq!(a.b, c.b);
 }
+
+#[test]
+fn test_zero_ended_array_and_array_compatibility() {
+    use prieto_buffers::PrietoBuffersSerde;
+
+    #[derive(PrietoBuffersSerde, Debug, PartialEq)]
+    struct TestStruct {
+        #[zero_ended]
+        a: [u8; 1024],
+        b: [u8; 1024],
+    }
+
+    #[derive(PrietoBuffersSerde, Debug, PartialEq)]
+    struct TestStructCompatible {
+        a: [u8; 1024],
+        b: [u8; 1024]
+    }
+
+    let mut a = TestStruct {
+        a: [1; 1024],
+        b: [1; 1024],
+    };
+
+    let mut b = TestStructCompatible {
+        a: [1; 1024],
+        b: [2; 1024],
+    };
+
+    a.a[0] = 'h' as u8;
+    a.a[1] = 'e' as u8;
+    a.a[2] = 'l' as u8;
+    a.a[3] = 'l' as u8;
+    a.a[4] = 'o' as u8;
+    a.a[5] = '\0' as u8;
+
+    let mut output = vec![];
+
+    output.resize(a.get_size() as usize, 0);
+
+    
+    a.serialize(output.as_mut_slice());
+    b.deserialize(output.as_slice());
+
+    eprintln!("A: {:?}", a);
+    eprintln!("B: {:?}", b);
+    eprintln!("Output: {:?}", output);
+    
+    assert_eq!(a.a, b.a);
+    assert_eq!(a.b, b.b);
+}

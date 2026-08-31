@@ -183,7 +183,7 @@ pub fn derive_prieto_buffer_serde(input: TokenStream) -> TokenStream {
                 )*
             }
 
-            fn deserialize_with_options(&mut self, bytes: &[u8], options: prieto_buffers::SerializeOptions) {
+            fn deserialize_with_options(&mut self, bytes: &[u8], options: prieto_buffers::SerializeOptions) -> u32 {
                 let mut offset:u32 = 0;
                 let mut counter:u8 = 0;
                 
@@ -205,8 +205,7 @@ pub fn derive_prieto_buffer_serde(input: TokenStream) -> TokenStream {
                                     if #is_zero_ended_str {
                                         options.is_zero_ended_string = true;
                                     }
-                                    self.#field_names.deserialize_with_options(&bytes[offset as usize..], options);
-                                    self.#field_names.get_size_with_options(options)
+                                    self.#field_names.deserialize_with_options(&bytes[offset as usize..], options)
                                 }
                                 else {
                                     #struct_name::skip_field(&bytes[offset as usize..], field_type)
@@ -220,6 +219,8 @@ pub fn derive_prieto_buffer_serde(input: TokenStream) -> TokenStream {
 
                     offset += field_size;
                 }
+
+                offset
             }
         }
     }.into()

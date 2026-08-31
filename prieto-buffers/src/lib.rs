@@ -99,9 +99,9 @@ pub trait PrietoBuffersSerde {
             options.unwrap_or(SerializeOptions::default()),
         );
     }
-    fn deserialize_with_options(&mut self, bytes: &[u8], options: SerializeOptions);
-    fn deserialize(&mut self, bytes: &[u8]) {
-        self.deserialize_with_options(bytes, SerializeOptions::default());
+    fn deserialize_with_options(&mut self, bytes: &[u8], options: SerializeOptions) -> u32;
+    fn deserialize(&mut self, bytes: &[u8]) -> u32{
+        self.deserialize_with_options(bytes, SerializeOptions::default())
     }
 }
 
@@ -122,8 +122,9 @@ impl PrietoBuffersSerde for u8 {
         *self == 0
     }
 
-    fn deserialize_with_options(&mut self, bytes: &[u8], _options: SerializeOptions) {
+    fn deserialize_with_options(&mut self, bytes: &[u8], _options: SerializeOptions) -> u32 {
         *self = bytes[0];
+        size_of::<u8>() as u32
     }
 }
 
@@ -144,8 +145,9 @@ impl PrietoBuffersSerde for i8 {
         bytes[0] = *self as u8;
     }
 
-    fn deserialize_with_options(&mut self, bytes: &[u8], _options: SerializeOptions) {
+    fn deserialize_with_options(&mut self, bytes: &[u8], _options: SerializeOptions) -> u32{
         *self = bytes[0] as i8;
+        size_of::<i8>() as u32
     }
 }
 
@@ -166,8 +168,9 @@ impl PrietoBuffersSerde for bool {
         bytes[0] = if *self { 1 } else { 0 };
     }
 
-    fn deserialize_with_options(&mut self, bytes: &[u8], _options: SerializeOptions) {
+    fn deserialize_with_options(&mut self, bytes: &[u8], _options: SerializeOptions) -> u32 {
         *self = bytes[0] != 0;
+        size_of::<bool>() as u32
     }
 }
 
@@ -185,8 +188,9 @@ impl PrietoBuffersSerde for u16 {
         bytes[1] = ((*self >> 8) & 0xFF) as u8;
     }
 
-    fn deserialize_with_options(&mut self, bytes: &[u8], _options: SerializeOptions) {
+    fn deserialize_with_options(&mut self, bytes: &[u8], _options: SerializeOptions) -> u32 {
         *self = (bytes[0] as u16) | ((bytes[1] as u16) << 8);
+        size_of::<u16>() as u32
     }
 }
 
@@ -204,8 +208,9 @@ impl PrietoBuffersSerde for i16 {
         bytes[1] = ((*self >> 8) & 0xFF) as u8;
     }
 
-    fn deserialize_with_options(&mut self, bytes: &[u8], _options: SerializeOptions) {
+    fn deserialize_with_options(&mut self, bytes: &[u8], _options: SerializeOptions) -> u32 {
         *self = (bytes[0] as i16) | ((bytes[1] as i16) << 8);
+        size_of::<i16>() as u32
     }
 }
 
@@ -225,11 +230,12 @@ impl PrietoBuffersSerde for u32 {
         bytes[3] = ((*self >> 24) & 0xFF) as u8;
     }
 
-    fn deserialize_with_options(&mut self, bytes: &[u8], _options: SerializeOptions) {
+    fn deserialize_with_options(&mut self, bytes: &[u8], _options: SerializeOptions) -> u32 {
         *self = (bytes[0] as u32)
             | ((bytes[1] as u32) << 8)
             | ((bytes[2] as u32) << 16)
             | ((bytes[3] as u32) << 24);
+        size_of::<u32>() as u32
     }
 }
 
@@ -249,11 +255,12 @@ impl PrietoBuffersSerde for i32 {
         bytes[3] = ((*self >> 24) & 0xFF) as u8;
     }
 
-    fn deserialize_with_options(&mut self, bytes: &[u8], _options: SerializeOptions) {
+    fn deserialize_with_options(&mut self, bytes: &[u8], _options: SerializeOptions)  -> u32{
         *self = (bytes[0] as i32)
             | ((bytes[1] as i32) << 8)
             | ((bytes[2] as i32) << 16)
             | ((bytes[3] as i32) << 24);
+        size_of::<i32>() as u32
     }
 }
 
@@ -272,11 +279,12 @@ impl PrietoBuffersSerde for u64 {
         }
     }
 
-    fn deserialize_with_options(&mut self, bytes: &[u8], _options: SerializeOptions) {
+    fn deserialize_with_options(&mut self, bytes: &[u8], _options: SerializeOptions) -> u32{
         *self = 0;
         for i in 0..8 {
             *self |= (bytes[i] as u64) << (i * 8);
         }
+        size_of::<u64>() as u32
     }
 }
 
@@ -295,11 +303,12 @@ impl PrietoBuffersSerde for i64 {
         }
     }
 
-    fn deserialize_with_options(&mut self, bytes: &[u8], _options: SerializeOptions) {
+    fn deserialize_with_options(&mut self, bytes: &[u8], _options: SerializeOptions) -> u32 {
         *self = 0;
         for i in 0..8 {
             *self |= (bytes[i] as i64) << (i * 8);
         }
+        size_of::<i64>() as u32
     }
 }
 
@@ -317,10 +326,11 @@ impl PrietoBuffersSerde for f32 {
         integer.serialize_with_options(bytes, options);
     }
 
-    fn deserialize_with_options(&mut self, bytes: &[u8], options: SerializeOptions) {
+    fn deserialize_with_options(&mut self, bytes: &[u8], options: SerializeOptions) -> u32 {
         let mut integer: u32 = 0;
         integer.deserialize_with_options(bytes, options);
         *self = f32::from_bits(integer);
+        size_of::<f32>() as u32
     }
 }
 
@@ -338,10 +348,11 @@ impl PrietoBuffersSerde for f64 {
         integer.serialize_with_options(bytes, options);
     }
 
-    fn deserialize_with_options(&mut self, bytes: &[u8], options: SerializeOptions) {
+    fn deserialize_with_options(&mut self, bytes: &[u8], options: SerializeOptions) -> u32 {
         let mut integer: u64 = 0;
         integer.deserialize_with_options(bytes, options);
         *self = f64::from_bits(integer);
+        size_of::<f64>() as u32
     }
 }
 
@@ -367,10 +378,11 @@ impl<T: PrietoBuffersSerde + Default> PrietoBuffersSerde for Option<T> {
         self.is_some()
     }
 
-    fn deserialize_with_options(&mut self, bytes: &[u8], options: SerializeOptions) {
+    fn deserialize_with_options(&mut self, bytes: &[u8], options: SerializeOptions) -> u32 {
         let mut value = T::default();
-        value.deserialize_with_options(bytes, options);
+        let size = value.deserialize_with_options(bytes, options);
         *self = Some(value);
+        size
     }
 }
 
@@ -458,22 +470,23 @@ impl<T: PrietoBuffersSerde + Default, const N: usize> PrietoBuffersSerde for [T;
         }
     }
 
-    fn deserialize_with_options(&mut self, bytes: &[u8], options: SerializeOptions) {
+    fn deserialize_with_options(&mut self, bytes: &[u8], options: SerializeOptions) -> u32{
         let mut size: u32 = 0;
         size.deserialize_with_options(bytes, options);
 
-        let mut offset = size_of::<u32>() + size_of::<u8>(); // Skip the length prefix and data type byte
+        let mut offset = (size_of::<u32>() + size_of::<u8>()) as u32; // Skip the length prefix and data type byte
 
         let mut iterator = self.iter_mut();
 
         for _ in 0..size as usize {
             if let Some(element) = iterator.next() {
-                element.deserialize_with_options(&bytes[offset as usize..], options);
-                offset += element.get_size_with_options(options) as usize;
+                offset += element.deserialize_with_options(&bytes[offset as usize..], options);
             } else {
                 break;
             }
         }
+
+        offset
     }
 }
 
@@ -561,22 +574,23 @@ impl<T: PrietoBuffersSerde + Default> PrietoBuffersSerde for Vec<T> {
         }
     }
 
-    fn deserialize_with_options(&mut self, bytes: &[u8], options: SerializeOptions) {
+    fn deserialize_with_options(&mut self, bytes: &[u8], options: SerializeOptions) ->  u32 {
         let mut size: u32 = 0;
         size.deserialize_with_options(bytes, options);
 
-        let mut offset = size_of::<u32>() + size_of::<u8>(); // Skip the length prefix and data type byte
+        let mut offset = (size_of::<u32>() + size_of::<u8>()) as u32; // Skip the length prefix and data type byte
 
         self.clear();
 
         for _ in 0..size {
 
             let mut element: T = Default::default();
-            element.deserialize_with_options(&bytes[offset as usize..], options);
-            offset += element.get_size_with_options(options) as usize;
+            offset += element.deserialize_with_options(&bytes[offset as usize..], options);
 
             self.push(element);
         }
+
+        offset
     }
 }
 
@@ -596,9 +610,10 @@ impl PrietoBuffersSerde for String {
         self_vec.serialize_with_options(bytes, options);
     }
 
-    fn deserialize_with_options(&mut self, bytes: &[u8], options: SerializeOptions) {
+    fn deserialize_with_options(&mut self, bytes: &[u8], options: SerializeOptions) -> u32 {
         let mut self_vec: Vec<u8> = Vec::new();
-        self_vec.deserialize_with_options(bytes, options);
+        let size = self_vec.deserialize_with_options(bytes, options);
         *self = String::from_utf8(self_vec).expect("Invalid UTF-8");
+        size
     }
 }
