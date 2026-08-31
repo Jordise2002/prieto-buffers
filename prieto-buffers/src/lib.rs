@@ -392,7 +392,7 @@ mod zero_ended_array {
     pub fn get_size_with_options<T: PrietoBuffersSerde + Default, const N: usize>(array: &[T; N], _options: SerializeOptions) -> u32 {
         let mut size: u32 = 4 + 1;//Size for the length prefix and data type byte
         for item in array.iter() {
-            size += item.get_size_with_options(_options); // +1 for the field header
+            size += item.get_size_with_options(_options);
             if item.is_zero_end() {
                 break;
             }
