@@ -495,9 +495,9 @@ mod zero_ended_vec {
     use super::*;
     
     pub fn get_size_with_options<T: super::PrietoBuffersSerde + Default>(vec: &Vec<T>, _options: super::SerializeOptions) -> u32 {
-        let mut size: u32 = 0;
+        let mut size: u32 = (size_of::<u32>() + size_of::<u8>()) as u32; // Size for the length prefix and type header
         for item in vec.iter() {
-            size += item.get_size_with_options(_options) + 1; // +1 for the field header
+            size += item.get_size_with_options(_options);
             if item.is_zero_end() {
                 break;
             }
