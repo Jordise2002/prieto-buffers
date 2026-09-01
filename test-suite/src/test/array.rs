@@ -4,11 +4,11 @@ fn test_array() {
     use rand::RngExt;
     use prieto_buffers::PrietoBuffersSerde;
 
-    let mut a: [u8; 500] = [0; 500];
-    let mut b: [u8; 500] = [0; 500];
+    let mut a: [u8; 31] = [0; 31];
+    let mut b: [u8; 31] = [0; 31];
 
     let mut rng = rand::rng();
-    for i in 0..500 {
+    for i in 0..31 {
         a[i] = rng.random();
     }
 
@@ -30,7 +30,7 @@ fn test_array_vec() {
     let mut b: Vec<u8> = vec![];
 
     let mut rng = rand::rng();
-    for _ in 0..500 {
+    for _ in 0..31 {
         a.push(rng.random());
     }
 

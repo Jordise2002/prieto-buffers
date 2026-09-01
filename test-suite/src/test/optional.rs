@@ -16,7 +16,9 @@ fn test_optional() {
 
     test_struct.serialize(&mut output);
 
-    assert_eq!(size, 3, "{:?}", output);
+    let overhead = (prieto_buffers::utils::get_struct_header_size() + prieto_buffers::utils::get_struct_len_size()) as u32;
+
+    assert_eq!(size, 1 + overhead, "{:?}", output);
 
     let empty_test_struct = TestStruct { a: None };
 

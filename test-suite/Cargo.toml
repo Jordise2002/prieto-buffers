@@ -3,7 +3,17 @@ name = "prieto-buffers-test-suite"
 version = "0.1.0"
 edition = "2024"
 
+[features]
+struct-len-size-0 = ["prieto-buffers/struct-len-size-0"] #Struct size fits with type, max fields in a struct: 32
+struct-len-size-1 = ["prieto-buffers/struct-len-size-1"] #Struct size occupies one byte, max fields in a struct: 255
+struct-len-size-2 = ["prieto-buffers/struct-len-size-2"] #Struct size occupies two bytes, max fields in a struct: 65535
+struct-len-size-4 = ["prieto-buffers/struct-len-size-4"] #Struct size occupies four bytes, max fields in a struct: 4294967296
+
+array-len-size-0 = ["prieto-buffers/array-len-size-0"] #Array size fits with type, max elements in an array: 32
+array-len-size-1 = ["prieto-buffers/array-len-size-1"] #Array size occupies one byte, max elements in an array: 255
+array-len-size-2 = ["prieto-buffers/array-len-size-2"] #Array size occupies two bytes, max elements in an array: 65535
+array-len-size-4 = ["prieto-buffers/array-len-size-4"] #Array size occupies four bytes, max elements in an array: 4294967296
 [dependencies]
-prieto-buffers = { path = "../prieto-buffers" , features = ["derive", "std"]}
+prieto-buffers = { path = "../prieto-buffers" , default-features=false,features = ["derive", "std"]}
 prieto-buffers-derive = { path = "../prieto-buffers-derive" }
 rand = "0.10.2"

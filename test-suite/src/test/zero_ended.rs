@@ -6,8 +6,8 @@ fn test_zero_ended_string() {
 
     let literal = "Testing 0 ended strings";
 
-    let mut a: [u8; 500] = [0; 500];
-    let mut b: [u8; 500] = [0; 500];
+    let mut a: [u8; 31] = [0;31];
+    let mut b: [u8; 31] = [0; 31];
 
     a[..literal.len()].copy_from_slice(literal.as_bytes());
     a[literal.len()] = 0;
@@ -18,7 +18,14 @@ fn test_zero_ended_string() {
 
     let size = a.get_size_with_options(options);
 
-    assert_eq!(size, (literal.len() + 6) as u32);
+    let overhead = if prieto_buffers::features::ARRAY_LEN_SIZE == 0 {
+         2
+    }
+    else {
+        prieto_buffers::features::ARRAY_LEN_SIZE + 2
+    };
+
+    assert_eq!(size, (literal.len() + overhead) as u32);
 
     let mut output = Vec::new();
     output.resize(size as usize, 0);
@@ -36,28 +43,28 @@ fn test_zero_ended_string_struct() {
     #[derive(PrietoBuffersSerde, Debug, PartialEq)]
     struct TestStruct {
         #[zero_ended]
-        a: [u8; 1024],
-        b: [u8; 1024],
+        a: [u8; 31],
+        b: [u8; 31],
     }
 
     #[derive(PrietoBuffersSerde, Debug, PartialEq)]
     struct TestStructCompatible {
         a: u8,
-        b: [u8; 1024]
+        b: [u8; 31]
     }
 
     let mut a = TestStruct {
-        a: [1; 1024],
-        b: [1; 1024],
+        a: [1; 31],
+        b: [1; 31],
     };
     let mut b = TestStruct {
-        a: [1; 1024],
-        b: [2; 1024],
+        a: [1; 31],
+        b: [2; 31],
     };
 
     let mut c = TestStructCompatible {
         a: 87,
-        b: [3; 1024]
+        b: [3; 31]
     };
 
     a.a[0] = 'h' as u8;
@@ -87,24 +94,24 @@ fn test_zero_ended_array_and_array_compatibility() {
     #[derive(PrietoBuffersSerde, Debug, PartialEq)]
     struct TestStruct {
         #[zero_ended]
-        a: [u8; 1024],
-        b: [u8; 1024],
+        a: [u8; 31],
+        b: [u8; 31],
     }
 
     #[derive(PrietoBuffersSerde, Debug, PartialEq)]
     struct TestStructCompatible {
-        a: [u8; 1024],
-        b: [u8; 1024]
+        a: [u8; 31],
+        b: [u8; 31]
     }
 
     let mut a = TestStruct {
-        a: [1; 1024],
-        b: [1; 1024],
+        a: [1; 31],
+        b: [1; 31],
     };
 
     let mut b = TestStructCompatible {
-        a: [1; 1024],
-        b: [2; 1024],
+        a: [1; 31],
+        b: [2; 31],
     };
 
     a.a[0] = 'h' as u8;
