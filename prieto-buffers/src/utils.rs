@@ -80,12 +80,12 @@ pub fn serialize_struct_field_header(field_id: u32, field_type: FieldType, bytes
         }
         2 => {
             (field_id as u16).serialize(bytes);
-            (field_type as u8).serialize(bytes);
+            bytes[2] = field_type as u8;
             size_of::<u16>() + size_of::<u8>()
         }
         4 => {
             (field_id as u32).serialize(bytes);
-            (field_type as u8).serialize(bytes);
+            bytes[4] = field_type as u8;
             size_of::<u32>() + size_of::<u8>()
         }
         _ => panic!("Unsupported STRUCT_LEN_SIZE"),
@@ -130,17 +130,17 @@ pub fn serialize_array_len(len: u32, field_type: FieldType, bytes: &mut [u8]) ->
         },
         1 => {
             (len as u8).serialize(bytes);
-            (field_type as u8).serialize(bytes); 
+            bytes[1] = field_type as u8;
             size_of::<u8>() + size_of::<u8>()
         },
         2 => {
             (len as u16).serialize(bytes);
-            (field_type as u8).serialize(bytes);
+            bytes[2] = field_type as u8;
             size_of::<u16>() + size_of::<u8>() 
         },
         4 => {
             (len as u32).serialize(bytes);
-            (field_type as u8).serialize(bytes);
+            bytes[4] = field_type as u8;
             size_of::<u32>() + size_of::<u8>()
         },
         _ => panic!("Unsupported ARRAY_LEN_SIZE"),

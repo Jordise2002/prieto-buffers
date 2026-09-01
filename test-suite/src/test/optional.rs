@@ -24,5 +24,5 @@ fn test_optional() {
 
     let empty_size = empty_test_struct.get_size();
 
-    assert_eq!(empty_size, 1);
+    assert_eq!(empty_size, prieto_buffers::utils::get_struct_len_size() as u32);
 }

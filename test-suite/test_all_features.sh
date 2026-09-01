@@ -28,3 +28,5 @@ for array_feature in "${ARRAY_FEATURES[@]}"; do
             --features "$array_feature,$struct_feature"
     done
 done
+
+echo "ALL TESTS PASSED :)"
