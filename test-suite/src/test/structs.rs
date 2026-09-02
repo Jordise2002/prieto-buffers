@@ -6,11 +6,12 @@ fn test_field_amount() {
     struct TestEmptyStruct {}
 
     let a = TestEmptyStruct {};
-    let mut a_buffer = [0; 1];
+    let mut a_buffer = [0; 500];
 
     a.serialize(a_buffer.as_mut_slice());
 
-    assert_eq!(0, a_buffer[0]);
+    let (len, _) = prieto_buffers::utils::deserialize_struct_len(a_buffer.as_slice());
+    assert_eq!(0, len);
 
     #[derive(PrietoBuffersSerde, PartialEq, Debug)]
     struct TestStruct {
@@ -38,6 +39,7 @@ fn test_field_amount() {
     let mut b_buffer = Vec::new();
     b_buffer.resize(b.get_size() as usize, 0);
     b.serialize(b_buffer.as_mut_slice());
-
-    assert_eq!(8, b_buffer[0]);
+    
+    let (len, _) = prieto_buffers::utils::deserialize_struct_len(b_buffer.as_slice());
+    assert_eq!(8, len);
 }

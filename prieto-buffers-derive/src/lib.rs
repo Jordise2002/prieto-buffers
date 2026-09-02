@@ -3,17 +3,15 @@ use quote::quote;
 use syn::{Meta, Lit};
 use std::collections::HashSet;
 
-const MAX_FIELD_ID: u8 = 31;
-
-fn parse_u8_from_attr(attr: &syn::Attribute) -> Option<u8> {
+fn parse_u32_from_attr(attr: &syn::Attribute) -> Option<u32> {
     match &attr.meta {
         Meta::List(meta_list) => {
             if let Some(_first) = meta_list.tokens.clone().into_iter().next() {
                 let lit: Lit = syn::parse2(meta_list.tokens.clone()).ok()?;
                 if let Lit::Int(lit_int) = lit {
-                    if let Ok(value) = lit_int.base10_parse::<u8>() {
-                        if value > MAX_FIELD_ID {
-                            panic!("Field ID must be between 0 and {}", MAX_FIELD_ID);
+                    if let Ok(value) = lit_int.base10_parse::<u32>() {
+                        if value >  u32::MAX{
+                            panic!("Field ID must be between 0 and {}", u32::MAX);
                         }
 
                         return Some(value);
@@ -28,7 +26,7 @@ fn parse_u8_from_attr(attr: &syn::Attribute) -> Option<u8> {
 
 
 
-fn generate_non_defined_ids(v: Vec<Option<u8>>) -> Option<Vec<u8>> {
+fn generate_non_defined_ids(v: Vec<Option<u32>>) -> Option<Vec<u32>> {
     let mut used = HashSet::new();
 
     for x in v.iter().flatten() {
@@ -36,7 +34,7 @@ fn generate_non_defined_ids(v: Vec<Option<u8>>) -> Option<Vec<u8>> {
     }
 
     let mut result = Vec::with_capacity(v.len());
-    let mut next_id: u8 = 0;
+    let mut next_id: u32 = 0;
 
     for slot in v {
         match slot {
@@ -45,8 +43,8 @@ fn generate_non_defined_ids(v: Vec<Option<u8>>) -> Option<Vec<u8>> {
                 result.push(x);
             }
             None => {
-                while next_id <= MAX_FIELD_ID && used.contains(&next_id) {
-                    if next_id == MAX_FIELD_ID {
+                while next_id <= u32::MAX && used.contains(&next_id) {
+                    if next_id == u32::MAX {
                         return None;
                     }
                     next_id += 1;
@@ -83,7 +81,7 @@ pub fn derive_prieto_buffer_serde(input: TokenStream) -> TokenStream {
     let defined_field_ids = fields.iter().map(|field| {
         for attr in &field.attrs {
             if attr.path().is_ident("field_id") {
-                return parse_u8_from_attr(attr);
+                return parse_u32_from_attr(attr);
             }
         }
 
@@ -107,29 +105,22 @@ pub fn derive_prieto_buffer_serde(input: TokenStream) -> TokenStream {
             pub fn skip_field(bytes: &[u8], field_type: prieto_buffers::FieldType) -> u32 {
                 match field_type {
                     prieto_buffers::FieldType::Struct => {
-                        let field_count = bytes[0] as u32;
-                        let mut offset:u32 = 1;
+                        let (field_count, offset) = prieto_buffers::utils::deserialize_struct_len(bytes);
+                        let mut offset = offset as u32;
                         for _ in 0..field_count {
-                            let field_header = bytes[offset as usize];
-                            offset += 1;
-
-                            let field_type = prieto_buffers::FieldType::from_u8(field_header >> 5).unwrap();
+                            let (_field_id, field_type, field_header_offset) = prieto_buffers::utils::deserialize_struct_field_header(&bytes[offset as usize..]);
+                            
+                            offset += field_header_offset as u32;
                             offset += #struct_name::skip_field(&bytes[offset as usize..], field_type);
                         }
 
                         offset
                     }
                     prieto_buffers::FieldType::Array => {
-                        let mut size: u32 = 0;
-                        size.deserialize(&bytes);
-
-                        let mut offset:u32 = size_of::<u32>() as u32;
+                        let (size, field_type, offset) = prieto_buffers::utils::deserialize_array_len(bytes);
                         
-                        let field_header = bytes[offset as usize];
-                        let field_type = prieto_buffers::FieldType::from_u8(field_header).unwrap();
-                        offset += 1;
+                        let mut offset = offset as u32;
 
-                        
                         for _ in 0..size {
                             offset += #struct_name::skip_field(&bytes[offset as usize..], field_type);
                         }
@@ -144,13 +135,13 @@ pub fn derive_prieto_buffer_serde(input: TokenStream) -> TokenStream {
 
         impl PrietoBuffersSerde for #struct_name {
             fn get_size_with_options(&self, options: prieto_buffers::SerializeOptions) -> u32 {
-                let mut size = 1;
+                let mut size = prieto_buffers::utils::get_struct_len_size() as u32;
                 #(if self.#field_names.should_serialize() {
                     let mut options = options.clone();
                     if #is_zero_ended_str {
                         options.is_zero_ended_string = true;
                     }
-                    size += self.#field_names.get_size_with_options(options) + 1;
+                    size += self.#field_names.get_size_with_options(options) + prieto_buffers::utils::get_struct_header_size() as u32;
                 })*
                 size
             }
@@ -160,14 +151,14 @@ pub fn derive_prieto_buffer_serde(input: TokenStream) -> TokenStream {
             }
 
             fn serialize_with_options(&self, bytes: &mut [u8], options: prieto_buffers::SerializeOptions) {
-                let mut offset:u32 = 0;
-                let mut field_amount:u8 = 0;
+                let mut offset = 0;
+                let mut field_amount:u32 = 0;
     
                 #(if self.#field_names.should_serialize() {
                     field_amount += 1;
                 })*
-                bytes[offset as usize] = field_amount;
-                offset += 1;
+
+                offset += prieto_buffers::utils::serialize_struct_len(field_amount, &mut bytes[offset..]);
 
                 #(
                     {
@@ -176,26 +167,21 @@ pub fn derive_prieto_buffer_serde(input: TokenStream) -> TokenStream {
                             options.is_zero_ended_string = true;
                         }
                         if self.#field_names.should_serialize() {
-                            self.#field_names.serialize_with_header(#field_ids, &mut bytes[offset as usize..], Some(options));
-                            offset += self.#field_names.get_size_with_options(options) + 1;
+                            self.#field_names.serialize_with_header(#field_ids, &mut bytes[offset..], Some(options));
+                            offset += self.#field_names.get_size_with_options(options) as usize + prieto_buffers::utils::get_struct_header_size();
                         }
                     }
                 )*
             }
 
             fn deserialize_with_options(&mut self, bytes: &[u8], options: prieto_buffers::SerializeOptions) -> u32 {
-                let mut offset:u32 = 0;
                 let mut counter:u8 = 0;
                 
-                let field_count = bytes[offset as usize];
-                offset += 1;
+                let (field_count, mut offset) = prieto_buffers::utils::deserialize_struct_len(bytes);
 
                 for _ in 0..field_count {
-                    let field_header = bytes[offset as usize];
-                    offset += 1;
-
-                    let field_id = field_header & 0b00011111;
-                    let field_type = prieto_buffers::FieldType::from_u8(field_header >> 5).unwrap();
+                    let (field_id, field_type, header_offset) = prieto_buffers::utils::deserialize_struct_field_header(&bytes[offset as usize..]);
+                    offset += header_offset;
 
                     let field_size = match field_id {
                         #(
@@ -205,22 +191,22 @@ pub fn derive_prieto_buffer_serde(input: TokenStream) -> TokenStream {
                                     if #is_zero_ended_str {
                                         options.is_zero_ended_string = true;
                                     }
-                                    self.#field_names.deserialize_with_options(&bytes[offset as usize..], options)
+                                    self.#field_names.deserialize_with_options(&bytes[offset..], options)
                                 }
                                 else {
-                                    #struct_name::skip_field(&bytes[offset as usize..], field_type)
+                                    #struct_name::skip_field(&bytes[offset..], field_type)
                                 }
                             }
                         )*
                         _ => {
-                            #struct_name::skip_field(&bytes[offset as usize..], field_type)
+                            #struct_name::skip_field(&bytes[offset..], field_type)
                         }
                     };
 
-                    offset += field_size;
+                    offset += field_size as usize;
                 }
 
-                offset
+                offset as u32
             }
         }
     }.into()
