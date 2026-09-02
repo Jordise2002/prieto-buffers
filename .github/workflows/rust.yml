@@ -5,6 +5,7 @@ on:
     branches:
       - main
       - master
+      - variable-size-array-and-struct-header
   pull_request:
 
 jobs:
@@ -26,4 +27,4 @@ jobs:
         uses: Swatinem/rust-cache@v2
 
       - name: Run tests
-        run: cargo test --all-features
+        run: bash test_all_features.sh
