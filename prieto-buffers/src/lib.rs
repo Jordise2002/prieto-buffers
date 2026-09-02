@@ -99,7 +99,7 @@ pub trait PrietoBuffersSerde {
 
 impl PrietoBuffersSerde for u8 {
     fn get_size_with_options(&self, _options: SerializeOptions) -> u32 {
-        1
+        size_of::<u8>() as u32
     }
 
     fn get_type(&self) -> FieldType {
@@ -122,7 +122,7 @@ impl PrietoBuffersSerde for u8 {
 
 impl PrietoBuffersSerde for i8 {
     fn get_size_with_options(&self, _options: SerializeOptions) -> u32 {
-        1
+        size_of::<i8>() as u32
     }
 
     fn get_type(&self) -> FieldType {
@@ -145,7 +145,7 @@ impl PrietoBuffersSerde for i8 {
 
 impl PrietoBuffersSerde for bool {
     fn get_size_with_options(&self, _options: SerializeOptions) -> u32 {
-        1
+        size_of::<bool>() as u32
     }
 
     fn get_type(&self) -> FieldType {
@@ -168,7 +168,7 @@ impl PrietoBuffersSerde for bool {
 
 impl PrietoBuffersSerde for u16 {
     fn get_size_with_options(&self, _options: SerializeOptions) -> u32 {
-        2
+        size_of::<u16>() as u32
     }
 
     fn get_type(&self) -> FieldType {
@@ -188,7 +188,7 @@ impl PrietoBuffersSerde for u16 {
 
 impl PrietoBuffersSerde for i16 {
     fn get_size_with_options(&self, _options: SerializeOptions) -> u32 {
-        2
+        size_of::<i16>() as u32
     }
 
     fn get_type(&self) -> FieldType {
@@ -208,7 +208,7 @@ impl PrietoBuffersSerde for i16 {
 
 impl PrietoBuffersSerde for u32 {
     fn get_size_with_options(&self, _options: SerializeOptions) -> u32 {
-        4
+        size_of::<u32>() as u32
     }
 
     fn get_type(&self) -> FieldType {
@@ -233,7 +233,7 @@ impl PrietoBuffersSerde for u32 {
 
 impl PrietoBuffersSerde for i32 {
     fn get_size_with_options(&self, _options: SerializeOptions) -> u32 {
-        4
+        size_of::<i32>() as u32
     }
 
     fn get_type(&self) -> FieldType {
@@ -258,7 +258,7 @@ impl PrietoBuffersSerde for i32 {
 
 impl PrietoBuffersSerde for u64 {
     fn get_size_with_options(&self, _options: SerializeOptions) -> u32 {
-        8
+        size_of::<u64>() as u32
     }
 
     fn get_type(&self) -> FieldType {
@@ -266,14 +266,14 @@ impl PrietoBuffersSerde for u64 {
     }
 
     fn serialize_with_options(&self, bytes: &mut [u8], _options: SerializeOptions) {
-        for i in 0..8 {
+        for i in 0..size_of::<u64>() {
             bytes[i] = ((*self >> (i * 8)) & 0xFF) as u8;
         }
     }
 
     fn deserialize_with_options(&mut self, bytes: &[u8], _options: SerializeOptions) -> u32{
         *self = 0;
-        for i in 0..8 {
+        for i in 0..size_of::<u64>() {
             *self |= (bytes[i] as u64) << (i * 8);
         }
         size_of::<u64>() as u32
@@ -282,7 +282,7 @@ impl PrietoBuffersSerde for u64 {
 
 impl PrietoBuffersSerde for i64 {
     fn get_size_with_options(&self, _options: SerializeOptions) -> u32 {
-        8
+        size_of::<i64>() as u32
     }
 
     fn get_type(&self) -> FieldType {
@@ -306,7 +306,7 @@ impl PrietoBuffersSerde for i64 {
 
 impl PrietoBuffersSerde for f32 {
     fn get_size_with_options(&self, _options: SerializeOptions) -> u32 {
-        4
+        size_of::<f32>() as u32
     }
 
     fn get_type(&self) -> FieldType {
@@ -328,7 +328,7 @@ impl PrietoBuffersSerde for f32 {
 
 impl PrietoBuffersSerde for f64 {
     fn get_size_with_options(&self, _options: SerializeOptions) -> u32 {
-        8
+        size_of::<f64>() as u32
     }
 
     fn get_type(&self) -> FieldType {
@@ -382,7 +382,7 @@ mod zero_ended_array {
     use super::*;
 
     pub fn get_size_with_options<T: PrietoBuffersSerde + Default, const N: usize>(array: &[T; N], _options: SerializeOptions) -> u32 {
-        let mut size: u32 = features::ARRAY_LEN_SIZE as u32 + 1;//Size for the length prefix and data type byte
+        let mut size: u32 = (features::ARRAY_LEN_SIZE + size_of::<u8>()) as u32;//Size for the length prefix and data type byte
         for item in array.iter() {
             size += item.get_size_with_options(_options);
             if item.is_zero_end() {
