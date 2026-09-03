@@ -12,3 +12,5 @@ mod array;
 mod zero_ended;
 #[cfg(test)]
 mod partial_serialization;
+#[cfg(test)]
+mod enums;

@@ -65,12 +65,18 @@ fn generate_non_defined_ids(v: Vec<Option<u32>>) -> Option<Vec<u32>> {
 pub fn derive_prieto_buffer_serde(input: TokenStream) -> TokenStream {
     let input = syn::parse_macro_input!(input as syn::DeriveInput);
 
-    let struct_name = &input.ident;
+    let name = &input.ident;
+    let attrs = &input.attrs;
 
-    let fields = match &input.data {
-        syn::Data::Struct(data) => &data.fields,
-        _ => panic!("PrietoBuffersSerde can only be derived for structs"),
-    };
+    match &input.data {
+        syn::Data::Struct(data) => derive_prieto_buffers_serde_struct(name,data),
+        syn::Data::Enum(data) => derive_prieto_buffers_serde_enum(name,data, attrs),
+        _ => panic!("PrietoBuffersSerde can only be derived for structs and enums"),
+    }
+}
+
+fn derive_prieto_buffers_serde_struct(struct_name: &proc_macro2::Ident, data: &syn::DataStruct) -> TokenStream {
+    let fields = data.fields.iter().collect::<Vec<_>>();
 
     let field_names: Vec<_> = fields
         .iter()
@@ -249,5 +255,78 @@ pub fn derive_prieto_buffer_serde(input: TokenStream) -> TokenStream {
                 offset as u32
             }
         }
+    }.into()
+}
+
+fn get_repr(attrs: &[syn::Attribute]) -> syn::Result<syn::Type> {
+    for attr in attrs {
+        if attr.path().is_ident("repr") {
+            let ty: syn::Type = attr.parse_args()?;
+            return Ok(ty);
+        }
+    }
+
+    panic!("Enum must have a repr attribute to derive PrietoBuffersSerde");
+    
+}
+
+fn derive_prieto_buffers_serde_enum(enum_name: &proc_macro2::Ident, data: &syn::DataEnum, attrs: &Vec<syn::Attribute>) -> TokenStream {
+    let is_simple = data.variants.iter().all(|variant| {
+        matches!(&variant.fields, syn::Fields::Unit)
+    });
+
+    if ! is_simple {
+        panic!("PrietoBuffersSerde can only be derived for simple enums");
+    }
+
+    let ty = get_repr(attrs).expect("Enum must have a repr attribute to derive PrietoBuffersSerde");
+
+    let variants = &data.variants.iter().map(|variant| {
+        variant.ident.clone()
+    }).collect::<Vec<_>>();
+
+    quote! {
+        impl #enum_name {
+    
+            fn from_raw(&mut self, raw: #ty) {
+                *self = match raw {
+                    #(
+                        raw_value if raw_value == #enum_name::#variants as #ty => #enum_name::#variants,
+                    )*
+                    _ => panic!("Invalid enum variant"),
+                }
+            }
+
+            fn to_raw(&self) -> #ty {
+                match self {
+                    #(
+                        #enum_name::#variants => #enum_name::#variants as #ty,
+                    )*
+                }
+            }
+        }
+
+        impl PrietoBuffersSerde for #enum_name {
+            fn get_size_with_options(&self, _options: prieto_buffers::SerializeOptions) -> u32 {
+                self.to_raw().get_size_with_options(_options)
+            }
+
+            fn get_type(&self) -> prieto_buffers::FieldType {
+                self.to_raw().get_type()
+            }
+
+            fn serialize_with_options(&self, bytes: &mut [u8], options: prieto_buffers::SerializeOptions) {
+                let raw = self.to_raw();
+                prieto_buffers::PrietoBuffersSerde::serialize_with_options(&raw, bytes, options);
+            }
+
+            fn deserialize_with_options(&mut self, bytes: &[u8], options: prieto_buffers::SerializeOptions) -> u32 {
+                let mut raw: #ty = 0;
+                let size = prieto_buffers::PrietoBuffersSerde::deserialize_with_options(&mut raw, bytes, options);
+                self.from_raw(raw);
+                size
+            }
+        }
+
     }.into()
 }
