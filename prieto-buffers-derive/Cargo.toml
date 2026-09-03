@@ -2,7 +2,7 @@
 name = "prieto-buffers-derive"
 version = "1.0.0"
 description = "Macro implementation for prieto-buffers"
-license = "MIT License"
+license = "MIT"
 repository = "https://github.com/Jordise2002/prieto-buffers"
 categories = ["No standard library", "Encoding", "No dynamic allocation"]
 edition = "2024"
