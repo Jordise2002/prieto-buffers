@@ -1,6 +1,10 @@
 [package]
 name = "prieto-buffers"
-version = "0.1.0"
+version = "1.0.0"
+description = "No-std minimal overhead serialization library for embedded devices"
+license = "MIT License"
+repository = "https://github.com/Jordise2002/prieto-buffers"
+categories = ["No standard library", "Encoding", "No dynamic allocation"]
 edition = "2024"
 
 [features]
@@ -19,4 +23,4 @@ array-len-size-2 = [] #Array size occupies two bytes, max elements in an array: 
 array-len-size-4 = [] #Array size occupies four bytes, max elements in an array: 4294967296
 
 [dependencies]
-prieto-buffers-derive = { path = "../prieto-buffers-derive", optional = true }
+prieto-buffers-derive = { version = "1", optional = true }

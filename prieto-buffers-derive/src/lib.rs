@@ -1,7 +1,7 @@
 use proc_macro::TokenStream;
 use quote::quote;
-use syn::{Meta, Lit};
 use std::collections::HashSet;
+use syn::{Lit, Meta};
 
 fn parse_u32_from_attr(attr: &syn::Attribute) -> Option<u32> {
     match &attr.meta {
@@ -10,7 +10,7 @@ fn parse_u32_from_attr(attr: &syn::Attribute) -> Option<u32> {
                 let lit: Lit = syn::parse2(meta_list.tokens.clone()).ok()?;
                 if let Lit::Int(lit_int) = lit {
                     if let Ok(value) = lit_int.base10_parse::<u32>() {
-                        if value >  u32::MAX{
+                        if value > u32::MAX {
                             panic!("Field ID must be between 0 and {}", u32::MAX);
                         }
 
@@ -23,8 +23,6 @@ fn parse_u32_from_attr(attr: &syn::Attribute) -> Option<u32> {
         _ => None,
     }
 }
-
-
 
 fn generate_non_defined_ids(v: Vec<Option<u32>>) -> Option<Vec<u32>> {
     let mut used = HashSet::new();
@@ -74,31 +72,38 @@ pub fn derive_prieto_buffer_serde(input: TokenStream) -> TokenStream {
         _ => panic!("PrietoBuffersSerde can only be derived for structs"),
     };
 
-    let field_names: Vec<_>= fields.iter().map(|field| {
-        field.ident.as_ref().expect("Fields must be named")
-    }).collect();
+    let field_names: Vec<_> = fields
+        .iter()
+        .map(|field| field.ident.as_ref().expect("Fields must be named"))
+        .collect();
 
-    let defined_field_ids = fields.iter().map(|field| {
-        for attr in &field.attrs {
-            if attr.path().is_ident("field_id") {
-                return parse_u32_from_attr(attr);
+    let defined_field_ids = fields
+        .iter()
+        .map(|field| {
+            for attr in &field.attrs {
+                if attr.path().is_ident("field_id") {
+                    return parse_u32_from_attr(attr);
+                }
             }
-        }
 
-        return None
-    }).collect::<Vec<_>>();
+            return None;
+        })
+        .collect::<Vec<_>>();
 
-    let is_zero_ended_str = fields.iter().map(|field| {
-        for attr in &field.attrs {
-            if attr.path().is_ident("zero_ended") {
-                return true;
+    let is_zero_ended_str = fields
+        .iter()
+        .map(|field| {
+            for attr in &field.attrs {
+                if attr.path().is_ident("zero_ended") {
+                    return true;
+                }
             }
-        }
-        false
-    }).collect::<Vec<_>>();
+            false
+        })
+        .collect::<Vec<_>>();
 
-
-    let field_ids = generate_non_defined_ids(defined_field_ids).expect("Too many fields, not enough IDs available");
+    let field_ids = generate_non_defined_ids(defined_field_ids)
+        .expect("Too many fields, not enough IDs available");
 
     quote! {
         impl #struct_name {
@@ -148,7 +153,6 @@ pub fn derive_prieto_buffer_serde(input: TokenStream) -> TokenStream {
                         let mut offset = offset as u32;
                         for _ in 0..field_count {
                             let (_field_id, field_type, field_header_offset) = prieto_buffers::utils::deserialize_struct_field_header(&bytes[offset as usize..]);
-                            
                             offset += field_header_offset as u32;
                             offset += #struct_name::skip_field(&bytes[offset as usize..], field_type);
                         }
@@ -157,7 +161,6 @@ pub fn derive_prieto_buffer_serde(input: TokenStream) -> TokenStream {
                     }
                     prieto_buffers::FieldType::Array => {
                         let (size, field_type, offset) = prieto_buffers::utils::deserialize_array_len(bytes);
-                        
                         let mut offset = offset as u32;
 
                         for _ in 0..size {
@@ -192,7 +195,6 @@ pub fn derive_prieto_buffer_serde(input: TokenStream) -> TokenStream {
             fn serialize_with_options(&self, bytes: &mut [u8], options: prieto_buffers::SerializeOptions) {
                 let mut offset = 0;
                 let mut field_amount:u32 = 0;
-    
                 #(if self.#field_names.should_serialize() {
                     field_amount += 1;
                 })*
@@ -215,7 +217,6 @@ pub fn derive_prieto_buffer_serde(input: TokenStream) -> TokenStream {
 
             fn deserialize_with_options(&mut self, bytes: &[u8], options: prieto_buffers::SerializeOptions) -> u32 {
                 let mut counter:u8 = 0;
-                
                 let (field_count, mut offset) = prieto_buffers::utils::deserialize_struct_len(bytes);
 
                 for _ in 0..field_count {
