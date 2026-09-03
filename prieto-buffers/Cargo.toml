@@ -1,6 +1,6 @@
 [package]
 name = "prieto-buffers"
-version = "1.0.0"
+version = "1.1.0"
 description = "No-std minimal overhead serialization library for embedded devices"
 license = "MIT"
 repository = "https://github.com/Jordise2002/prieto-buffers"

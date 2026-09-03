@@ -1,6 +1,6 @@
 [package]
 name = "prieto-buffers-derive"
-version = "1.0.0"
+version = "1.1.0"
 description = "Macro implementation for prieto-buffers"
 license = "MIT"
 repository = "https://github.com/Jordise2002/prieto-buffers"
