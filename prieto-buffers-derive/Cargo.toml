@@ -1,13 +1,16 @@
 [package]
 name = "prieto-buffers-derive"
-version = "0.1.0"
+version = "1.0.0"
+description = "Macro implementation for prieto-buffers"
+license = "MIT License"
+repository = "https://github.com/Jordise2002/prieto-buffers"
 edition = "2024"
 
 [lib]
 proc-macro = true
 
 [dependencies]
-syn = "2"
+syn = "3"
 quote = "1"
 proc-macro2 = "1"
 byteorder = "1.4"
