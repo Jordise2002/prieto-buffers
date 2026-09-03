@@ -10,3 +10,5 @@ mod optional;
 mod array;
 #[cfg(test)]
 mod zero_ended;
+#[cfg(test)]
+mod partial_serialization;

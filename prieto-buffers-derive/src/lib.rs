@@ -102,7 +102,46 @@ pub fn derive_prieto_buffer_serde(input: TokenStream) -> TokenStream {
 
     quote! {
         impl #struct_name {
-            pub fn skip_field(bytes: &[u8], field_type: prieto_buffers::FieldType) -> u32 {
+            pub fn get_size_field_with_options(&self, field_id: u32, options: prieto_buffers::SerializeOptions) -> u32 {
+                match field_id {
+                    #(#field_ids => {
+                        let mut options = options.clone();
+                        if #is_zero_ended_str {
+                            options.is_zero_ended_string = true;
+                        }
+                        self.#field_names.get_size_with_options(options) + (prieto_buffers::utils::get_struct_header_size() + prieto_buffers::utils::get_struct_len_size()) as u32
+                    })*
+                    _=> {
+                        0//If the field does not exists, return 0
+                    }
+                }
+            }
+
+            pub fn get_size_field(&self, field_id: u32) -> u32 {
+                self.get_size_field_with_options(field_id, prieto_buffers::SerializeOptions::default())
+            }
+
+            pub fn serialize_field_with_options(&self, field_id: u32, buffer: & mut [u8], options: prieto_buffers::SerializeOptions) {
+                let offset = prieto_buffers::utils::serialize_struct_len(1, buffer);
+                match field_id {
+                    #(#field_ids => {
+                        let mut options = options.clone();
+                        if #is_zero_ended_str {
+                            options.is_zero_ended_string = true;
+                        }
+                        self.#field_names.serialize_with_header(field_id, & mut buffer[offset as usize..], Some(options));
+                    })*
+                    _=> {
+                        // If the field does not exist, do nothing
+                    }
+                }
+            }
+
+            pub fn serialize_field(&self, field_id: u32, buffer: & mut[u8]) {
+                self.serialize_field_with_options(field_id, buffer, prieto_buffers::SerializeOptions::default());
+            }
+
+            fn skip_field(bytes: &[u8], field_type: prieto_buffers::FieldType) -> u32 {
                 match field_type {
                     prieto_buffers::FieldType::Struct => {
                         let (field_count, offset) = prieto_buffers::utils::deserialize_struct_len(bytes);
